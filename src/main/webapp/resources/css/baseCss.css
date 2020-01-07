@@ -1,0 +1,82 @@
+@charset "UTF-8";
+html {
+	height: 100%;
+}
+
+body {
+	width: 1205px;
+	height: 100%;
+	margin: 0px auto; 
+	font-size: 0pt;
+}
+
+div {
+	display: inline-block;
+	vertical-align: top;
+}
+
+body>div, .right>div {
+	font-size: 11pt;
+}
+ 
+.left {
+	width: 200px;
+	height:auto;
+	min-height: 625px;
+}
+
+.right {
+	width: 1000px;
+	min-height: 625px;
+	font-size: 0pt;
+}
+
+.content {
+	width: 990px;
+	min-height: 600px;
+}
+
+.bottom {
+    width: 1200px;
+    height: 150px;
+    text-align: center;
+    background-color: #62a1ff;
+    font-weight: bold;
+}
+
+.bottom>div {
+	margin-top: 20px;
+	margin-left: 30px;
+	text-align: left;
+}
+
+.history {
+	width: 10px;
+	min-height: 10px;
+}
+
+.history>table {
+	width: 100px;
+	top: 200px;
+	position: absolute;
+	text-align: center;
+	font-size: 9pt;
+	left: calc(50% + 600px);
+	z-index: -1;
+	border: 2px solid rgb(98, 161, 255);
+}
+
+.Rogo {
+	width: 200px;
+	height: 200px;
+	text-align: center;
+}
+
+.bigmanu {
+	height: 50px;
+	font-size: 16pt;
+}
+
+.left td {
+	text-align: center;
+}

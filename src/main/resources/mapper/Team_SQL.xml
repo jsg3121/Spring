@@ -1,0 +1,955 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Team">
+	<select id="idcheck" parameterType="hashmap" resultType="Integer">
+	SELECT COUNT(*) as CNT
+	FROM t_member
+	WHERE ID = #{id}
+	</select>
+	
+	<insert id="insertup" parameterType="hashmap" >
+	INSERT INTO t_member (NO ,ID,PASSWORD ,EMAIL ,LOCAL ,NICKNAME,NAME,BORNDATE,PHONE,ADDRESS)
+	VALUES(TMEMBER_SEQ.nextval,#{id},#{pw},#{inemail},#{loc},#{nick},#{name},#{borndate},#{phone},#{addr})
+	</insert>
+	
+	<select id="loginCheck" parameterType="hashmap" resultType="hashmap">
+	SELECT NO,ID,PASSWORD,EMAIL,NAME,GRADE,NICKNAME
+	FROM t_member
+	WHERE id =#{memId}
+	AND PASSWORD =#{memPw}
+	AND DEL_YN = 0
+	
+	</select>
+	
+	<select id = "getlist" parameterType="hashmap" resultType="hashmap">
+		SELECT A.*
+		FROM (SELECT ROW_NUMBER() OVER(ORDER BY CULTCODE DESC ) AS RNUM,CULTCODE, CODENAME, TITLE, STRTDATE, END_DATE,MAIN_IMG,
+		        TIME, PLACE, ORG_LINK, PROGRAM, GCODE, USE_FEE, SYMPATHY,TO_CHAR(END_DATE,'YYYY-MM-DD') as E_DAY
+		FROM (SELECT *
+              FROM T_CULTURE
+              WHERE 1=1
+              <if test="codename != 'play' || codename == null">
+				<choose>
+					<when test="codename == 1">
+ 					AND CODENAME = '문화교양/강좌'
+					</when>
+					<when test="codename == 2">
+ 					AND CODENAME = '무용'
+					</when>
+					<when test="codename == 3">
+ 					AND CODENAME = '뮤지컬/오페라'
+					</when>
+					<when test="codename == 4">
+ 					AND CODENAME = '영화'
+					</when>
+					<when test="codename == 5">
+ 					AND CODENAME = '전시/미술'
+					</when>
+					<when test="codename == 6">
+ 					AND CODENAME = '축제-문화·예술'
+					</when>
+					<when test="codename == 7">
+ 					AND CODENAME = '콘서트'
+					</when>
+					<when test="codename == 8">
+ 					AND CODENAME = '클래식'
+					</when>
+					<when test="codename == 9">
+ 					AND CODENAME = '기타'
+					</when>
+				</choose>
+              </if>
+              )
+		WHERE DEL_YN = 0
+		<if test = "searchText != null and searchText != '' ">
+			<choose>
+				<when test = "searchGbn == 0">
+					AND TITLE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test = "searchGbn == 1">
+					AND GCODE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test="searchGbn == null">
+					AND (TITLE LIKE '%' || #{searchText} || '%' OR GCODE LIKE '%' || #{searchText} || '%')
+				</when>
+			</choose>
+		</if>
+		<if test = "startDate == null and endDate == null and startDate == '' and endDate == ''">
+			AND STRTDATE &gt;= TO_DATE(ADD_MONTHS(SYSDATE, -4))
+			AND END_DATE &lt;= TO_DATE(ADD_MONTHS(SYSDATE, +4))
+		</if>
+		<if test = "startDate != null and endDate != null and startDate != '' and endDate != ''">
+			AND STRTDATE &gt;= #{startDate}
+			AND END_DATE &lt;= #{endDate} 
+		</if>
+		) A
+		WHERE A.RNUM BETWEEN #{startCnt} AND #{endCnt}
+	</select>
+	
+	<select id = "getBoardListCnt" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) AS CNT
+		FROM (SELECT *
+              FROM T_CULTURE
+              WHERE 1=1
+              <if test="codename != 'play'">
+				<choose>
+					<when test="codename == 1">
+ 					AND CODENAME = '문화교양/강좌'
+					</when>
+					<when test="codename == 2">
+ 					AND CODENAME = '무용'
+					</when>
+					<when test="codename == 3">
+ 					AND CODENAME = '뮤지컬/오페라'
+					</when>
+					<when test="codename == 4">
+ 					AND CODENAME = '영화'
+					</when>
+					<when test="codename == 5">
+ 					AND CODENAME = '전시/미술'
+					</when>
+					<when test="codename == 6">
+ 					AND CODENAME = '축제-문화·예술'
+					</when>
+					<when test="codename == 7">
+ 					AND CODENAME = '콘서트'
+					</when>
+					<when test="codename == 8">
+ 					AND CODENAME = '클래식'
+					</when>
+					<when test="codename == 9">
+ 					AND CODENAME = '기타'
+					</when>
+					<otherwise>
+					 
+					</otherwise>
+				</choose>
+              </if>
+              )
+		WHERE DEL_YN = 0
+		<if test = "searchText != null and searchText != '' ">
+			<choose>
+				<when test = "searchGbn == 0">
+					AND TITLE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test = "searchGbn == 1">
+					AND GCODE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test="searchGbn == null">
+					AND (TITLE LIKE '%' || #{searchText} || '%' OR GCODE LIKE '%' || #{searchText} || '%')
+				</when>
+			</choose>
+		</if>
+		<if test = "startDate == null or startDate == '' and endDate == null or endDate == ''">
+			AND STRTDATE &gt;= TO_DATE(ADD_MONTHS(SYSDATE, -4))
+			AND END_DATE &lt;= TO_DATE(ADD_MONTHS(SYSDATE, +4))
+		</if>
+		<if test = "startDate != null and endDate != null and startDate != '' and endDate != ''">
+			AND STRTDATE &gt;= #{startDate}
+			AND END_DATE &lt;= #{endDate} 
+		</if>
+	</select>
+	
+	<select id="findPw" parameterType="hashmap" resultType="String">
+		SELECT PASSWORD
+		FROM T_MEMBER
+		WHERE ID LIKE #{id} AND NAME LIKE #{name} AND EMAIL LIKE #{pwemail}
+	</select>
+	
+	<select id="findId" parameterType="hashmap" resultType="String">
+		SELECT ID
+		FROM T_MEMBER
+		WHERE NAME LIKE #{iname} AND EMAIL LIKE #{iemail}
+	</select>
+	
+	<select id="mypageim" parameterType="hashmap" resultType="hashmap">
+		select NO,id,PASSWORD,email,INTRODUCE,PICTURE,NAME
+		from t_member
+		where no= #{no}
+	</select>
+	
+	<select id="allim" parameterType="hashmap" resultType="hashmap">
+		SELECT m.NO,m.id,m.PASSWORD,m.email,m.INTRODUCE,m.PICTURE,m.NAME,
+		NVL(b.title,'게시글이 없습니다') as titleb,ROW_NUMBER() OVER (PARTITION BY b.title ORDER BY b.write_dt desc) AS RNUM,nvl(C.CON,'작성한 댓글이없습니다.') as CONC
+		FROM T_MEMBER M LEFT OUTER JOIN T_BOARD B ON M.NO = B.MEM_NO
+    	LEFT OUTER JOIN T_COMENT C ON C.MEM_NO=m.no
+		WHERE m.no = #{no}
+		and b.del_yn=0
+		ORDER BY RNUM
+	</select>
+	
+	<update id="fileinsert" parameterType="hashmap">
+		update t_member set PICTURE = #{att}
+		where NO = #{no}
+	</update>
+	
+	<select id = "getUserList" parameterType="hashmap" resultType="hashmap">
+		SELECT A.*
+		FROM(SELECT ROW_NUMBER() OVER(ORDER BY NO) RNUM, NO, ID, NAME, NICKNAME, EMAIL, LOCAL, BORNDATE, GRADE,DEL_YN
+		     FROM T_MEMBER
+		     WHERE 1=1
+		     <if test = "searchText != null and searchText != '' ">
+				<choose>
+					<when test = "searchGbn == 0">
+						AND EMAIL LIKE '%' || #{searchText} || '%'
+					</when>
+					<when test = "searchGbn == 1">
+						AND NAME LIKE '%' || #{searchText} || '%'
+					</when>
+					<when test = "searchGbn == 2">
+						AND NICKNAME LIKE '%' || #{searchText} || '%'
+					</when>
+					<when test = "searchGbn == 3">
+						AND LOCAL LIKE '%' || #{searchText} || '%'
+					</when>
+				</choose>
+			</if>
+			) A
+		WHERE A.RNUM BETWEEN #{startCnt} AND #{endCnt}
+	</select>
+	
+	<select id = "getUserListCnt" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) CNT
+		FROM T_MEMBER
+		WHERE 1=1
+		<if test = "searchText != null and searchText != '' ">
+			<choose>
+				<when test = "searchGbn == 0">
+					AND EMAIL LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test = "searchGbn == 1">
+					AND NAME LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test = "searchGbn == 2">
+					AND NICKNAME LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test = "searchGbn == 3">
+					AND LOCAL LIKE '%' || #{searchText} || '%'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	<select id = "getUserInfoList" parameterType="hashmap" resultType="hashmap">
+		SELECT NO, ID, EMAIL, LOCAL, NICKNAME, NAME, TO_CHAR(BORNDATE, 'YY-MM-DD') AS BORNDATE, GRADE,DEL_YN
+		FROM T_MEMBER
+		WHERE NO = #{no}
+	</select>
+	
+	<select id = "getUserboard" parameterType="hashmap" resultType="hashmap">
+		SELECT COUNT(*) BOARD
+		FROM T_BOARD
+		WHERE MEM_NO = #{no} AND DEL_YN = 0
+	
+	</select>
+	
+	<select id = "getUserConment" parameterType="hashmap" resultType="hashmap">
+		SELECT COUNT(*) AS COMENT
+		FROM T_COMENT
+		WHERE DEL_YN = 0 AND MEM_NO = #{no}
+	</select>
+	
+	<select id = "getUserReport" parameterType="hashmap" resultType="hashmap">
+		SELECT M.NO, NVL(C.REPORT,0) AS REPORT
+		FROM T_MEMBER M LEFT OUTER JOIN 
+		(SELECT NVL(A.MEM_NO,B.MEM_NO) AS MEM_NO , SUM(NVL(A.AREPORT,0) + NVL(B.BREPORT,0)) AS REPORT
+		FROM (SELECT MEM_NO, SUM(REPORT) AS AREPORT FROM T_BOARD GROUP BY MEM_NO) A 
+		    FULL OUTER JOIN (SELECT MEM_NO, SUM(REPORT) AS BREPORT FROM T_COMENT GROUP BY MEM_NO) B 
+		    ON A.MEM_NO = B.MEM_NO
+		GROUP BY A.MEM_NO,B.MEM_NO)C ON M.NO = C.MEM_NO
+		WHERE NO = #{no}
+	</select>
+	
+	<update id="pwupdate" parameterType="hashmap">
+	update t_member set password = #{newMemPw}
+	where NO = #{no}
+	</update>
+
+	<update id="deluser" parameterType="hashmap">
+	update t_member set DEL_YN = 1
+	where NO = #{no}
+	AND PASSWORD =#{pw}
+	AND EMAIL =#{email}
+	</update>
+	<update id="intoduce" parameterType="hashmap">
+	update t_member set INTRODUCE = #{into}
+	where NO = #{no}
+	</update>
+	
+	<insert id="writeAjax" parameterType="hashmap">
+		INSERT INTO T_BOARD(NO, TITLE, CON, NICK, MEM_NO,CLASS)
+		VALUES(T_BOARD_SEQ.NEXTVAL, #{title}, #{areaCon}, #{nick}, #{no}, 2)
+	</insert>
+	
+	<insert id="insertAjax" parameterType="hashmap">
+		INSERT INTO T_COMENT(NO,CON,BOARD_NO,MEM_NO, CATEGORI)
+		VALUES(T_COMENT_SEQ.NEXTVAL,#{con}, #{bno}, #{no}, 1)
+	</insert>
+	
+	<select id="getListCnt" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) AS CNT
+		FROM T_BOARD
+		WHERE DEL_YN =0 
+		<if test="codename != 0">
+			AND CLASS = #{codename}
+		</if>
+	</select>
+	
+	<select id="getListCo" parameterType="hashmap" resultType="hashmap">
+		SELECT NO, TITLE, NICK, CON, TO_CHAR(WRITE_DT,'YYYY-MM-DD') AS WRITE_DT, HIT,CLASS
+		FROM(
+		SELECT NO, TITLE, NICK, CON, WRITE_DT, HIT,ROW_NUMBER() OVER(ORDER BY NO DESC)AS RUM,CLASS
+		FROM T_BOARD
+		WHERE DEL_YN =0
+		<if test="codename != 0">
+			AND CLASS = #{codename}
+		</if>
+		<if test = "searchText != null or searchText != '' ">
+			<choose>
+				<when test = "searchGbn == 0">
+					AND TITLE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test = "searchGbn == 1">
+					AND CON LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test = "searchGbn == 2">
+					AND NICK LIKE '%' || #{searchText} || '%'
+				</when>
+			</choose>
+		</if>
+		ORDER BY NO DESC)
+		WHERE RUM BETWEEN #{startCnt} AND #{endCnt}
+	</select>
+	
+	<insert id="reportAjax" parameterType="hashmap">
+		INSERT INTO T_REPORT(NO, RE_MEM, DETAIL_CON, WT_MEM, WT_MODE, WT_NO, RE_CON)
+		VALUES(T_REPORT_SEQ.NEXTVAL,#{memno},
+		<if test="rno==1">
+			'영리목적/홍보성'
+		</if>
+		<if test="rno==2">
+			'불법정보'
+		</if>
+		<if test="rno==3">
+			'음란/선정성'
+		</if>
+		<if test="rno==4">
+			'욕설/인신공격'
+		</if>
+		<if test="rno==5">
+			'개인정보노출'
+		</if>
+		<if test="rno==6">
+			'같은 내용의 반복 게시(도배)'
+		</if>
+		<if test="rno==7">
+			'기타'
+		</if>
+		, #{bnick}, #{wtMode}, #{bno}, #{reCon})
+		</insert>
+	
+	<update id="boardHit" parameterType="hashmap">
+		UPDATE T_BOARD SET HIT = HIT + 1
+		WHERE NO = #{no}
+	</update>
+	
+	<select id="getBoard" parameterType="hashmap" resultType="hashmap">
+		SELECT no, title, con, nick, to_char(write_dt,'yyyy-mm-dd') write_dt , hit, report, mem_no, class,cul_no
+		FROM t_board
+		where no = #{no}
+	</select>
+	
+	<select id="getBoard2" parameterType="hashmap" resultType="hashmap">
+		SELECT no, title, con, nick, to_char(write_dt,'yyyy-mm-dd') write_dt , hit, report, mem_no, class
+		FROM t_board
+		where no = #{no}
+	</select>
+
+	<select id="reple" parameterType="hashmap" resultType="hashmap">
+		select c.no,c.con,to_char(c.write_dt,'yyyy-mm-dd') write_dt,c.board_no,c.report,c.mem_no,
+		m.nickname,c.del_yn
+		from t_coment c inner join t_member m
+		on c.mem_no = m.no
+		where board_no = #{bno} and c.del_yn = 0
+		order by c.no desc
+	</select>
+	<select id="Admin_reple" parameterType="hashmap" resultType="hashmap">
+		select c.no,c.con,to_char(c.write_dt,'yyyy-mm-dd') write_dt,c.board_no,c.report,c.mem_no,
+		m.nickname,c.del_yn
+		from t_coment c inner join t_member m
+		on c.mem_no = m.no
+		where board_no = #{bno}
+		order by c.no desc
+	</select>
+
+	<insert id="ChangeJoinDate">
+		INSERT INTO T_LOG(TO_DATE,CNT)
+		VALUES(TO_CHAR(SYSDATE,'YYYY-MM-DD'),0)
+	</insert>
+	
+	<select id="getCulInfo" parameterType="hashmap" resultType="hashmap">
+		SELECT *
+		FROM T_CULTURE
+		WHERE CULTCODE = #{cultcode}
+	</select>
+	
+	<select id="getReview" parameterType="hashmap" resultType="hashmap">
+		SELECT *
+		FROM (SELECT C.CULTCODE, C.TITLE AS CTITLE, B.TITLE AS BTITLE, ROW_NUMBER() OVER(ORDER BY B.WRITE_DT DESC) AS RNUM, B.NO, B.DEL_YN,B.NICK
+		FROM T_CULTURE C INNER JOIN T_BOARD B ON C.CULTCODE = B.CUL_NO
+		WHERE B.DEL_YN = 0 AND CULTCODE = #{cultcode})
+		WHERE RNUM BETWEEN 1 AND 3 
+	</select>
+	
+	<update id="Joinmem">
+		UPDATE T_LOG 
+		SET CNT= CNT+1
+		WHERE TO_DATE=TO_CHAR(SYSDATE,'YYYY-MM-DD')
+	</update>
+	<update id="logoinsert" parameterType="hashmap">
+	update T_ROGO set LOC = #{logoatt}
+	</update>
+	<select id="logoon" parameterType="hashmap" resultType="hashmap">
+	select loc
+	from T_ROGO
+	</select>
+		<select id="getJoin_day" resultType="Integer">
+		SELECT CNT
+		FROM T_LOG
+		WHERE TO_DATE = TO_CHAR(SYSDATE,'YYYY-MM-DD')
+	</select>
+	<select id="getJoin_week" resultType="Integer">
+		SELECT SUM(CNT) AS CNT  
+		FROM (SELECT CNT
+	    FROM T_LOG
+   		WHERE TO_DATE BETWEEN  TO_CHAR(SYSDATE-6,'YYYY-MM-DD') AND TO_CHAR(SYSDATE,'YYYY-MM-DD'))
+	</select>
+	<select id="getJoin_month" resultType="Integer">
+		SELECT SUM(CNT) AS CNT  
+		FROM (SELECT CNT
+	    FROM T_LOG
+   		WHERE TO_DATE BETWEEN  TO_CHAR(SYSDATE-29,'YYYY-MM-DD') AND TO_CHAR(SYSDATE,'YYYY-MM-DD'))
+	</select>
+	<select id="getboard_day" resultType="Integer">
+		SELECT COUNT(*) AS CNT
+	    FROM T_BOARD
+	    WHERE WRITE_DT = TO_CHAR(SYSDATE,'YYYY-MM-DD')
+	</select>
+	<select id="getboard_week" resultType="Integer">
+		SELECT COUNT(*) AS CNT
+	    FROM T_BOARD
+	    WHERE WRITE_DT BETWEEN TO_CHAR(SYSDATE-6,'YYYY-MM-DD') AND TO_CHAR(SYSDATE,'YYYY-MM-DD')
+	</select>
+	<select id="getboard_month" resultType="Integer">
+		SELECT COUNT(*) AS CNT
+	    FROM T_BOARD
+	    WHERE WRITE_DT BETWEEN TO_CHAR(SYSDATE-29,'YYYY-MM-DD') AND TO_CHAR(SYSDATE,'YYYY-MM-DD')
+	</select>	 
+	<update id="cimginsert" parameterType="hashmap">
+	UPDATE t_culimg  
+	SET LOC = #{imgatt}
+	WHERE NO = #{no}
+	</update> 
+	
+	<select id="getimglist" parameterType="hashmap" resultType="hashmap"> 
+	select *
+	from t_culimg
+	where loc is not null
+	order by no
+	</select>
+	<select id="getimglistcnt" resultType="Integer">
+		SELECT COUNT(LOC)
+		FROM T_CULIMG
+	</select>
+	
+	<select id="A_getListCnt" resultType="Integer">
+		SELECT COUNT(*)
+		FROM T_BOARD
+		WHERE 1=1
+		<if test = "searchText != null and searchText != '' ">
+				<choose>
+					<when test = "searchGbn == 0">
+						AND TITLE LIKE '%' || #{searchText} || '%'
+					</when>
+					<when test = "searchGbn == 1">
+						AND NO =#{searchText}
+					</when>
+					<when test = "searchGbn == 2">
+						AND NICK LIKE '%' || #{searchText} || '%'
+					</when>
+					<when test = "searchGbn == 3">
+						AND CON LIKE '%' || #{searchText} || '%'
+					</when>
+					<when test = "searchGbn == 4">
+						AND MEM_NO = #{searchText}
+					</when>
+					<when test = "searchGbn == 5">
+						AND CUL_NO = #{searchText}
+					</when>
+				</choose>
+			</if>
+	</select>
+	<select id="A_getlist" parameterType="hashmap" resultType="hashmap">
+		SELECT *
+		FROM (SELECT ROW_NUMBER() OVER(ORDER BY B.NO) RNUM,B.NO,TITLE,CON,NICK,NVL(CUL_NO,'0') as CUL_NO,
+				TO_CHAR(WRITE_DT,'YYYY-MM-DD HH:MI') AS WRITE_DT,HIT,B.DEL_YN,REPORT,MEM_NO,CLASS,ID
+			  FROM T_BOARD B LEFT OUTER JOIN T_MEMBER M ON B.MEM_NO=M.NO
+			  WHERE 1=1
+			  <if test = "searchText != null and searchText != '' ">
+				<choose>
+					<when test = "searchGbn == 0">
+						AND TITLE LIKE '%' || #{searchText} || '%'
+					</when>
+					<when test = "searchGbn == 1">
+						AND B.NO = #{searchText}
+					</when>
+					<when test = "searchGbn == 2">
+						AND NICK LIKE '%' || #{searchText} || '%'
+					</when> 
+					<when test = "searchGbn == 3">
+						AND CON LIKE '%' || #{searchText} || '%'
+					</when>
+					<when test = "searchGbn == 4">
+						AND MEM_NO = #{searchText}
+					</when>
+					<when test = "searchGbn == 5">
+						AND CUL_NO = #{searchText}
+					</when>
+				</choose>
+			</if>
+			  )
+		WHERE RNUM BETWEEN #{startCnt} AND #{endCnt}
+	</select>
+		<update id="deleteAjax" parameterType="hashmap">
+		UPDATE T_BOARD SET DEL_YN =  1
+		WHERE NO = #{bno}
+	</update>
+	<update id="un_deleteAjax" parameterType="hashmap">
+		UPDATE T_BOARD SET DEL_YN =  0
+		WHERE NO = #{bno}
+	</update>
+	
+	<select id="updateAjax" parameterType="hashmap" resultType="hashmap">
+		SELECT *
+		FROM T_BOARD
+		WHERE NO = #{bno}
+	</select>
+	
+	<update id="updateAjaxCo" parameterType="hashmap">
+		UPDATE T_BOARD SET TITLE = #{title}, CON = #{areaCon}
+		WHERE NO = #{no}
+	</update>
+	
+	<select id="getComment" parameterType="hashmap" resultType="hashmap">
+		SELECT C.NO AS COMMENT_NO, C.CON, C.WRITE_DT, C.BOARD_NO, C.MEM_NO, C.CULT_NO, M.NO, M.NICKNAME
+		FROM T_COMENT C INNER JOIN T_CULTURE T ON C.CULT_NO = T.CULTCODE INNER JOIN T_MEMBER M ON C.MEM_NO = M.NO
+		WHERE T.CULTCODE = #{cultcode}  AND C.DEL_YN = 0
+		ORDER BY WRITE_DT DESC
+	</select>
+	
+	<insert id="updateComment" parameterType="hashmap">
+		INSERT INTO T_COMENT(NO, CON, CULT_NO, MEM_NO)
+		VALUES (T_COMENT_SEQ.NEXTVAL, #{comment} , #{cultNO}, #{memNo})
+	</insert>
+	
+	<update id="repotComment" parameterType="hashmap">
+		UPDATE T_COMENT SET REPORT = REPORT + 1
+		WHERE NO = #{CommentNo}
+	</update>
+	
+	<update id="deleteComment" parameterType="hashmap">
+		UPDATE T_COMENT SET DEL_YN = 1
+		WHERE NO = #{CommentNo}
+	</update>
+	
+	<update id="changeComment" parameterType="hashmap">
+		UPDATE T_COMENT SET CON = #{comment}
+		WHERE NO = #{CommentNo}
+	</update>
+	
+	<select id="GetoldRogo" resultType="hashmap">
+		SELECT LOC
+		FROM T_ROGO
+	</select>
+	<update id="C_delete" parameterType="hashmap">
+		UPDATE T_COMENT
+		SET DEL_YN = 1
+		WHERE NO=#{no}
+	</update>
+	<update id="C_undelete" parameterType="hashmap">
+		UPDATE T_COMENT
+		SET DEL_YN = 0
+		WHERE NO=#{no}
+	</update>
+	<select id="myreviewcheck" parameterType="hashmap" resultType="hashmap">
+	SELECT NO,TITLE,CON,NICK,to_char(write_dt,'yyyy-mm-dd') as WRITE_DT,HIT,CLASS,MEM_NO
+	from t_board
+	where mem_no=#{no}
+	AND del_yn='0'
+	order by no desc	
+	</select>
+	<select id="myreplecheck" parameterType="hashmap" resultType="hashmap">
+	SELECT NO,CON,to_char(write_dt,'yyyy-mm-dd') as WRITE_DT,MEM_NO,del_yn,board_no
+	FROM t_coment
+	where mem_no=#{no}
+	AND del_yn='0'
+	order by no desc
+	
+	</select>
+	<select id="Search_C" resultType="hashmap" parameterType="hashmap">
+		SELECT *
+		FROM(
+		    SELECT ROW_NUMBER() OVER(ORDER BY CULTCODE DESC) AS CNT, CULTCODE,CODENAME,TITLE,
+		    TO_CHAR(STRTDATE,'YYYY-MM-DD') as STRTDATE,TO_CHAR(END_DATE,'YYYY-MM-DD') as END_DATE, PLACE,GCODE,MAIN_IMG
+		    FROM T_CULTURE
+		    WHERE SYSDATE &lt; END_DATE AND ( TITLE LIKE '%' || #{searchText} || '%' OR GCODE LIKE '%' || #{searchText} || '%'))
+		WHERE CNT BETWEEN 1 AND 3
+		
+	</select>
+	<select id="Search_B" resultType="hashmap" parameterType="hashmap">
+		SELECT *
+   		FROM(SELECT ROW_NUMBER() OVER(ORDER BY NO DESC) AS CNT,NO,TITLE,CON,NICK,TO_CHAR(WRITE_DT,'YYYY-MM-DD') as WRITE_DT,DEL_YN
+	        FROM T_BOARD
+	        WHERE DEL_YN=0 AND (TITLE LIKE '%' || #{searchText} || '%' OR CON LIKE '%' || #{searchText} || '%') )
+		WHERE CNT BETWEEN 1 AND 3
+	</select>
+	
+	<select id="Search_Cn" parameterType="hashmap" resultType="Integer">
+			SELECT count(*) as CNT
+			FROM(
+			    SELECT ROW_NUMBER() OVER(ORDER BY CULTCODE DESC) AS CNT, CULTCODE,CODENAME,TITLE,STRTDATE,END_DATE,PLACE,GCODE,MAIN_IMG
+			    FROM T_CULTURE
+			    WHERE SYSDATE &lt; END_DATE AND ( TITLE LIKE '%' || #{searchText} || '%' OR GCODE LIKE '%' || #{searchText} || '%'))
+	</select>
+	
+	<select id="Search_Bn" parameterType="hashmap" resultType="Integer">
+			SELECT count(*) as CNT
+   			FROM(SELECT ROW_NUMBER() OVER(ORDER BY NO DESC) AS CNT,NO,TITLE,CON,NICK,WRITE_DT,DEL_YN
+		        FROM T_BOARD
+		        WHERE DEL_YN=0 AND (TITLE LIKE '%' || #{searchText} || '%' OR CON LIKE '%' || #{searchText} || '%') )
+	</select>
+	
+	<insert id="WriteReview" parameterType="hashmap">
+		INSERT INTO T_BOARD(NO, TITLE, CON, NICK, MEM_NO, CLASS, CUL_NO)
+		VALUES (T_BOARD_SEQ.NEXTVAL, #{title} , #{areaCon}, #{nick} , #{no} , 1, #{cultcode})
+	</insert>
+	
+	<update id="changeBoardComment" parameterType="hashmap">
+		UPDATE T_COMENT SET CON = #{con}
+		WHERE NO = #{ComentNo}
+	</update>
+
+	<select id="getTomon" parameterType="hashmap" resultType="hashmap">
+		SELECT MAIN_IMG,TITLE,SYSMON,CULTCODE
+		FROM (SELECT RANK() OVER(ORDER BY SYMPATHY) AS RNK,CULTCODE,MAIN_IMG,TITLE,TO_CHAR(SYSDATE,'MM') AS SYSMON
+		    FROM T_CULTURE
+		    WHERE TO_CHAR(STRTDATE,'YYYY-MM')=TO_CHAR(SYSDATE,'YYYY-MM'))
+		WHERE RNK BETWEEN 1 AND 4
+	</select>
+	
+	<select id="getCNtTomon" resultType="Integer">
+		SELECT COUNT(*) as CNT
+		FROM (SELECT RANK() OVER(ORDER BY SYMPATHY) AS RNK,CULTCODE,MAIN_IMG,TITLE,TO_CHAR(SYSDATE,'MM') AS SYSMON
+		    FROM T_CULTURE
+		    WHERE TO_CHAR(STRTDATE,'YYYY-MM')=TO_CHAR(SYSDATE,'YYYY-MM'))
+		WHERE RNK BETWEEN 1 AND 4
+	</select>
+	<select id="New_Cult" resultType="hashmap">
+		SELECT *
+		FROM(SELECT RANK() OVER(ORDER BY STRTDATE DESC) AS RNK,CULTCODE,TITLE,TO_CHAR(STRTDATE,'YY-MM-DD') AS DATES,GCODE
+			FROM T_CULTURE)
+		WHERE RNK BETWEEN 1 AND 3
+	</select>
+	<select id="Hit_Cult" resultType="hashmap">
+		SELECT *
+		FROM(SELECT RANK() OVER(ORDER BY SYMPATHY DESC) AS RNK,CULTCODE,TITLE,TO_CHAR(STRTDATE,'YY-MM-DD') AS DATES,GCODE
+			FROM T_CULTURE)
+		WHERE RNK BETWEEN 1 AND 3
+	</select>
+	
+	<!--a_c_list 페이징 갯수  -->
+	<select id="acListCnt" parameterType="hashmap" resultType="Integer">
+	SELECT COUNT(*) AS CNT
+	FROM (SELECT *
+         FROM T_CULTURE
+         WHERE 1=1 
+         <if test = "searchText != null and searchText != '' ">
+			<choose>
+				<when test = "searchGbn == 0">
+					AND TITLE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test = "searchGbn == 1">
+					AND GCODE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test="searchGbn == null">
+					AND (TITLE LIKE '%' || #{searchText} || '%' OR GCODE LIKE '%' || #{searchText} || '%')
+				</when>
+			</choose>
+		</if>
+		<if test = "startDate == null or startDate == '' and endDate == null or endDate == ''">
+			AND STRTDATE &gt;= TO_DATE(ADD_MONTHS(SYSDATE, -4))
+			AND END_DATE &lt;= TO_DATE(ADD_MONTHS(SYSDATE, +4))
+		</if>
+		<if test = "startDate != null and endDate != null and startDate != '' and endDate != ''">
+			AND STRTDATE &gt;= #{startDate}
+			AND END_DATE &lt;= #{endDate} 
+		</if>
+		
+		
+         )
+         <if test="chk_info==0">
+         where 1=1
+         </if>
+         <if test="chk_info==1">
+         where del_yn =0
+         </if>
+         <if test="chk_info==2">
+         where del_yn =1
+         </if>
+        
+	
+	</select>
+	<!--aclist 리스트출력  -->
+	<select id="acgetlist" resultType="hashmap" parameterType="hashmap">
+	SELECT A.*
+		FROM (SELECT ROW_NUMBER() OVER(ORDER BY CULTCODE DESC ) AS RNUM,CULTCODE, CODENAME, TITLE, STRTDATE, END_DATE,MAIN_IMG,
+		        TIME, PLACE, ORG_LINK, PROGRAM, GCODE, USE_FEE, SYMPATHY,TO_CHAR(END_DATE,'YYYY-MM-DD') as E_DAY,DEL_YN
+		FROM (SELECT *
+              FROM T_CULTURE
+              <if test="chk_info==0">
+         where 1=1
+         </if>
+         <if test="chk_info==1">
+         where del_yn =0
+         </if>
+         <if test="chk_info==2">
+         where del_yn =1
+         </if>)
+         where 1=1
+		<if test = "searchText != null and searchText != '' ">
+			<choose>
+				<when test = "searchGbn == 0">
+					AND TITLE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test = "searchGbn == 1">
+					AND GCODE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test="searchGbn == null">
+					AND (TITLE LIKE '%' || #{searchText} || '%' OR GCODE LIKE '%' || #{searchText} || '%')
+				</when>
+			</choose>
+		</if>
+		<if test = "startDate == null and endDate == null and startDate == '' and endDate == ''">
+			AND STRTDATE &gt;= TO_DATE(ADD_MONTHS(SYSDATE, -4))
+			AND END_DATE &lt;= TO_DATE(ADD_MONTHS(SYSDATE, +4))
+		</if>
+		<if test = "startDate != null and endDate != null and startDate != '' and endDate != ''">
+			AND STRTDATE &gt;= #{startDate}
+			AND END_DATE &lt;= #{endDate} 
+		</if>
+		) A		
+		WHERE A.RNUM BETWEEN #{startCnt} AND #{endCnt}
+	
+	</select>
+	<update id="activebtnajax" parameterType="hashmap">
+	update T_CULTURE SET DEL_YN ='0'
+	where CULTCODE =#{cultcode}
+	</update>
+	
+	<update id="unactivebtnajax" parameterType="hashmap">
+	update T_CULTURE SET DEL_YN ='1'
+	where CULTCODE =#{cultcode}
+	</update>
+		<update id="deleteajaxComment" parameterType="hashmap">
+		update t_coment set del_yn =1
+		where board_no =#{bno}
+	</update>
+	<update id="userDelet" parameterType="hashmap">
+		UPDATE T_MEMBER
+		SET DEL_YN=1
+		WHERE NO=#{no}
+	</update>
+	<update id="user_unDelet" parameterType="hashmap">
+		UPDATE T_MEMBER
+		SET DEL_YN=0
+		WHERE NO=#{no}
+	</update>
+	<update id="grade_update" parameterType="hashmap">
+		UPDATE T_MEMBER
+		SET GRADE=#{user_Grade}
+		WHERE NO=#{no}
+	</update>
+		<select id="getReportList" parameterType="hashmap" resultType="hashmap">
+		SELECT *
+		FROM (SELECT NO, RE_MEM, DETAIL_CON, WT_MEM, TO_CHAR(RE_DATE, 'YYYY-MM-DD') AS RE_DATE, RE_HIT, WT_MODE, WT_NO,ROW_NUMBER() OVER(ORDER BY NO DESC) AS RNUM
+		FROM T_REPORT
+	
+		<choose>	
+			<when test = "reportsearc == 0">
+				where 1=1
+			</when>
+			<when test = "reportsearc == 1">
+				where DETAIL_CON LIKE '%' || '영리목적/홍보성' || '%'
+			</when>
+			<when test = "reportsearc == 2">
+				where DETAIL_CON LIKE '%' || '불법정보' || '%'
+			</when>
+			<when test = "reportsearc == 3">
+				where DETAIL_CON LIKE '%' || '음란/선정성' || '%'
+			</when>
+			<when test = "reportsearc == 4">
+				where DETAIL_CON LIKE '%' || '욕설/인신공격' || '%'
+			</when>
+			<when test = "reportsearc == 5">
+				where DETAIL_CON LIKE '%' || '개인정보노출' || '%'
+			</when>
+			<when test = "reportsearc == 6">
+				where DETAIL_CON LIKE '%' || '같은 내용의 반복 게시(도배)' || '%'
+			</when>
+			<when test = "reportsearc == 7">
+				where DETAIL_CON LIKE '%' || '기타' || '%'
+			</when>
+			
+		</choose>
+		)
+		WHERE RNUM BETWEEN #{startCnt} AND #{endCnt}
+	</select>
+	
+	<select id="ReportListCnt" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) AS CNT
+		FROM T_REPORT
+		
+		<choose>
+				<when test = "reportsearc == 0">
+					where 1=1
+				</when>
+				<when test = "reportsearc == 1">
+					where DETAIL_CON LIKE '%' || '영리목적/홍보성' || '%'
+				</when>
+				<when test = "reportsearc == 2">
+					where DETAIL_CON LIKE '%' || '불법정보' || '%'
+				</when>
+				<when test = "reportsearc == 3">
+					where DETAIL_CON LIKE '%' || '음란/선정성' || '%'
+				</when>
+				<when test = "reportsearc == 4">
+					where DETAIL_CON LIKE '%' || '욕설/인신공격' || '%'
+				</when>
+				<when test = "reportsearc == 5">
+					where DETAIL_CON LIKE '%' || '개인정보노출' || '%'
+				</when>
+				<when test = "reportsearc == 6">
+					where DETAIL_CON LIKE '%' || '같은 내용의 반복 게시(도배)' || '%'
+				</when>
+				<when test = "reportsearc == 7">
+					where DETAIL_CON LIKE '%' || '기타' || '%'
+				</when>
+				
+			</choose>
+			
+    </select>
+	  <insert id="reportCommentAjax" parameterType="hashmap">
+	   INSERT INTO T_REPORT(NO, RE_MEM, DETAIL_CON, WT_MEM, WT_MODE, WT_NO, RE_CON)
+	   VALUES(T_REPORT_SEQ.NEXTVAL,#{memno},
+	   <if test="rno==1">
+	      '영리목적/홍보성'
+	   </if>
+	   <if test="rno==2">
+	      '불법정보'
+	   </if>
+	   <if test="rno==3">
+	      '음란/선정성'
+	   </if>
+	   <if test="rno==4">
+	      '욕설/인신공격'
+	   </if>
+	   <if test="rno==5">
+	      '개인정보노출'
+	   </if>
+	   <if test="rno==6">
+	      '같은 내용의 반복 게시(도배)'
+	   </if>
+	   <if test="rno==7">
+	      '기타'
+	   </if>
+	   , #{CommentName}, #{wtMode2}, #{CommentNumber}, #{CommentCon})
+	</insert>
+	
+    <select id="getReportInfo" parameterType="hashmap" resultType="hashmap">
+    	SELECT NO, RE_MEM, DETAIL_CON, WT_MEM, TO_CHAR(RE_DATE, 'YYYY-MM-DD') AS RE_DATE, RE_HIT, WT_MODE, WT_NO, RE_CON
+		FROM T_REPORT
+		WHERE NO = #{ReportNo}
+    </select>
+  
+    <update id="imgdelajax" parameterType="hashmap">
+   	 	UPDATE t_culimg  
+		SET LOC = null
+		WHERE NO = #{no}   
+    </update>
+    <update id="alldelajax" parameterType="hashmap">
+   		UPDATE T_BOARD SET DEL_YN =  1
+		WHERE NO = #{no}
+    </update>
+    <update id="unalldeleteAjax" parameterType="hashmap">
+    	UPDATE T_BOARD SET DEL_YN =  0
+		WHERE NO = #{no}
+    </update>
+    
+    <update id="Reload_Cult">
+    	UPDATE T_CULTURE
+		SET DEL_YN = 1
+		WHERE SYSDATE >= END_DATE
+    </update>
+    
+    <update id="reportCount" parameterType="hashmap">
+    	UPDATE T_BOARD SET REPORT = REPORT + 1
+		WHERE NO = #{bno}
+    </update>
+    
+    <update id="reportCommentCount" parameterType="hashmap">
+    	UPDATE T_COMENT SET REPORT = REPORT + 1
+		WHERE NO = #{CommentNumber}
+    </update>
+    
+    <insert id="reportComment" parameterType="hashmap">
+    	INSERT INTO T_REPORT(NO, RE_MEM, DETAIL_CON, WT_MEM, WT_MODE, WT_NO, RE_CON)
+  	 	VALUES(T_REPORT_SEQ.NEXTVAL,#{memNo},
+		   <if test="rno==1">
+		      '영리목적/홍보성'
+		   </if>
+		   <if test="rno==2">
+		      '불법정보'
+		   </if>
+		   <if test="rno==3">
+		      '음란/선정성'
+		   </if>
+		   <if test="rno==4">
+		      '욕설/인신공격'
+		   </if>
+		   <if test="rno==5">
+		      '개인정보노출'
+		   </if>
+		   <if test="rno==6">
+		      '같은 내용의 반복 게시(도배)'
+		   </if>
+		   <if test="rno==7">
+		      '기타'
+		   </if>
+	   , #{CommentName}, #{wtMode2}, #{CommentNumber}, #{CommentCon})
+    </insert>
+    
+    <select id="SYMPATHYcheck" parameterType="hashmap" resultType="Integer">
+   	select count(*)
+	from t_sympathy
+	where CULT_NO = #{cultcode} and mem_no =#{memNo} 
+    </select>
+    
+    <insert id="SYMPATHYhitinsert" parameterType="hashmap">
+    INSERT INTO T_SYMPATHY (NO, CULT_NO, MEM_NO) VALUES (T_SYMPATHY_SEQ.nextval, #{cultcode}, #{memNo})
+    </insert>
+    
+    <update id="SYMPATHYhitupdate" parameterType="hashmap">
+    UPDATE t_culture SET sympathy=sympathy+1
+	WHERE cultcode=#{cultcode}
+    </update>
+</mapper>
